@@ -65,9 +65,11 @@ nav button{padding:13px 4px;border-radius:24px}nav button.on{background:#ff78492
 .ph{position:fixed;inset:0;z-index:0;pointer-events:none;background:center/cover no-repeat;opacity:0;transition:opacity .6s;filter:saturate(.85);-webkit-mask-image:linear-gradient(#000 0,#000 40%,transparent 92%);mask-image:linear-gradient(#000 0,#000 40%,transparent 92%)}
 .ph.on{opacity:.45}.ph:after{content:"";position:absolute;inset:0;background:linear-gradient(#0c0e1455,#0c0e14b0)}
 .hero h2,.big,.sub{text-shadow:0 2px 14px #0c0e14}.chips span[data-a]{cursor:pointer;color:var(--em);border-color:#ff784955}
+.why{white-space:pre-wrap;font-size:18px;line-height:1.6;margin:0}.c .why{font-size:16px}
+.pv{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;font-size:15px}
 </style></head><body>
 <div class=ph id=ph></div><div class=bg><svg viewBox="0 0 400 300" preserveAspectRatio="xMaxYMax slice"><defs><linearGradient id=hf x1=0 y1=0 x2=0 y2=1><stop offset=0 stop-color="#ff7849" stop-opacity=".16"/><stop offset=1 stop-color="#ff7849" stop-opacity="0"/></linearGradient><linearGradient id=hs x1=0 x2=1 y1=0 y2=0><stop offset=0 stop-color="#ff7849" stop-opacity="0"/><stop offset=1 stop-color="#ffb35c" stop-opacity=".7"/></linearGradient></defs><path d="M-10 300V250C80 235 200 190 410 90V300Z" fill="url(#hf)"/><path d="M-10 250C80 235 200 190 410 90" fill="none" stroke="url(#hs)" stroke-width="2"/><circle cx="264" cy="143" r="12" fill="#0c0e14" stroke="#ffb35c" stroke-opacity=".7" stroke-width="2"/></svg></div>
-<main id="m"></main><div id="v"></div>
+<main id="m"></main><div id="v"></div><div id="nt"></div>
 <input type=file id=pf accept="image/*" hidden><nav><button data-t="d">Dnes</button><button data-t="u">Úkoly</button><button data-t="h">Síň slávy</button></nav>
 <script>
 const K='neustoupim-v1',$=s=>document.querySelector(s);
@@ -80,7 +82,7 @@ const diff=(a,b)=>Math.round((dt(b)-dt(a))/864e5),id=()=>Math.random().toString(
 const e=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const fd=(s,y)=>{const n=T();if(!y){if(s==n)return'dnes';if(s==add(n,1))return'zítra'}return+s.slice(8)+'. '+ +s.slice(5,7)+'.'+(y?' '+s.slice(0,4):'')};
 const Q=['Bolest je dočasná. Vzdání se je napořád.','Nikdo nepřijde. Jsi jen ty a ten kámen.','Dnes si zkrvav ruce. Zítra budeš silnější.','Meč se nekuje v pohodlí.','Kámen se zvedá po kouscích. Dnes jeden.','Slabost sis vybral včera. Dnes si vyber ocel.','Nepotřebuješ náladu. Potřebuješ splnit úkol.','Zítřek je jen další den, kdy můžeš prohrát. Vyhraj dnešek.','Sisyfos nepřestal tlačit. Ty taky nepřestaneš.','Ten, kdo se vzdá, se vzdává každý den znovu.'];
-let tab='d';
+let tab='d',rd=0;
 function req(c,d){return c.tasks.filter(t=>t.t=='r'?t.f<=d&&(!t.u||d<=t.u):t.due==d)}
 function ok(c,d){const k=c.ch[d]||{};return req(c,d).every(t=>t.t=='r'?k[t.id]:t.on&&t.on<=t.due)}
 function streak(c){const n=T();let k=0,d=req(c,n).length&&ok(c,n)?n:add(n,-1);for(;d>=c.s;d=add(d,-1)){if(req(c,d).length&&ok(c,d))k++;else break}return k}
@@ -93,7 +95,7 @@ function chk(i){const c=S.a,n=T(),t=c.tasks.find(x=>x.id==i);
 function start(){const n=$('#cn').value.trim(),en=$('#ce').value;
  const tasks=$('#ct').value.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>({id:id(),t:'r',x,f:T()}));
  if(!n||!en||en<T()||!tasks.length){alert('Pojmenuj výzvu, nastav datum konce (dnes nebo později) a zapiš aspoň jeden denní úkol.');return}
- S.a={n,s:T(),e:en,al:+$('#ca').value,tasks,ch:{},m:0};save();tab='d';render()}
+ S.a={n,s:T(),e:en,al:+$('#ca').value,tasks,ch:{},m:0,w:$('#cw').value.trim()};save();tab='d';render()}
 function addo(){const x=$('#ot').value.trim(),d=$('#od').value,c=S.a;
  if(!x||!d||d<T()||d>c.e){alert('Zadej úkol a termín (dnes až do konce výzvy).');return}
  c.tasks.push({id:id(),t:'o',x,due:d,on:null});save();render()}
@@ -104,11 +106,13 @@ function del(i){const c=S.a,n=T(),t=c.tasks.find(x=>x.id==i);
  if(t.t=='o'||t.f>n)c.tasks=c.tasks.filter(x=>x!==t);else t.u=n;save();render()}
 function bk(){const j=JSON.stringify({...S,p:null,v:null});navigator.clipboard.writeText(j).then(()=>alert('Záloha je zkopírovaná. Vlož ji třeba do Poznámek.')).catch(()=>prompt('Zkopíruj celý text:',j))}
 function rs(){const t=prompt('Vlož zálohu:');if(!t)return;try{const o=JSON.parse(t);if(!o.h)throw 0;S={...o,p:S.p||null,v:null};save();settle();render()}catch(x){alert('Záloha není platná.')}}
+function note(){const c=S.a;return`<div class=ov style="text-align:left;justify-content:flex-start;overflow:auto;padding-top:calc(34px + env(safe-area-inset-top))"><div class=l style="margin:0">Proč to dělám</div><h2>${e(c.n)}</h2>`+(rd==2?`<textarea id=wt style="height:48vh" placeholder="Proč do toho jdeš? Co ti to změní? Co se stane, když to vzdáš?">${e(c.w||'')}</textarea><button data-a=wsave>Uložit</button>`:`<p class=why>${e(c.w||'Zatím nic. Napiš si, proč do toho jdeš, dokud to víš.')}</p><div class=row><button class=g data-a=wedit style="flex:1">Upravit</button><button data-a=wclose style="flex:1">Zavřít</button></div>`)+`</div>`}
 function newc(){const n=T();return`<h2>Nová výzva</h2><p class=q>Kdo nemá cíl, nemá ani důvod bojovat. Pojmenuj svého nepřítele.</p>
 <div class=c><div class=l>Název výzvy</div><input id=cn maxlength=60 placeholder="Např. 30 dní bez cukru">
 <div class=l>Konec výzvy</div><input id=ce type=date min="${n}" value="${add(n,30)}">
 <div class=l>Povolené zmeškané dny</div><select id=ca><option value=0>0 — žádná milost</option><option value=1>1</option><option value=2>2</option><option value=3>3</option></select>
 <div class=l>Denní úkoly (každý na nový řádek)</div><textarea id=ct placeholder="Cvičení&#10;Studium 1 hodina"></textarea>
+<div class=l>Proč to děláš? (přečteš si to, až bude těžko)</div><textarea id=cw></textarea>
 <button data-a=go style="width:100%;margin-top:10px">Vstoupit do boje</button></div>`}
 function today(){const c=S.a,n=T(),L=diff(n,c.e),tot=diff(c.s,c.e)+1,dy=diff(c.s,n)+1,k=c.ch[n]||{};
  const r=c.tasks.filter(t=>t.t=='r'&&t.f<=n&&(!t.u||n<=t.u));
@@ -120,6 +124,7 @@ function today(){const c=S.a,n=T(),L=diff(n,c.e),tot=diff(c.s,c.e)+1,dy=diff(c.s
 <div class=ring><svg viewBox="0 0 240 240"><defs><linearGradient id=gg x1=0 y1=0 x2=1 y2=1><stop offset=0 stop-color="#ffb35c"/><stop offset=1 stop-color="#ff5d6c"/></linearGradient></defs><circle class=tr cx=120 cy=120 r=104 /><circle class=pr cx=120 cy=120 r=104 stroke="url(#gg)" stroke-dasharray="${Math.min(1,(dy-1+(all?1:0))/tot)*653.45} 653.45"/></svg><div class=mid><div class=big>${L}</div><div class=sub>${L>0?'dní zbývá':'poslední den'}</div></div></div>
 <div class=chips><span>Série <b>${sk}</b></span><span>${c.al?`Zmeškáno <b>${c.m}/${c.al}</b>`:'Bez milosti'}</span>${S.p?'':'<span data-a=pick>+ Fotka</span>'}</div></div>
 <p class=q>${Q[(dy+c.n.length)%Q.length]}</p>
+<div class=c data-a=wopen style="cursor:pointer"><div class=l style="margin:0 0 6px">Proč to dělám</div><div class=pv>${c.w?e(c.w):'Klepni a napiš si, proč do toho jdeš.'}</div></div>
 ${all?'<div class="stamp">Splněno</div>':''}
 <div class=l>Dnešní úkoly</div>${r.map(t=>row(t,k[t.id])).join('')||'<p class=dim>Žádné denní úkoly pro dnešek. Přidej je v záložce Úkoly.</p>'}
 ${o.map(t=>row(t,!!t.on)).join('')}
@@ -133,23 +138,23 @@ ${r.map(t=>li(t,t.f>n?'platí od zítřka':'každý den')).join('')||'<p class=d
 <div class=c><input id=rt maxlength=80 placeholder="Nový pravidelný úkol"><button data-a=addr style="width:100%">Přidat (platí od zítřka)</button></div>
 <div class=l style="margin-top:18px">Čekající s termínem</div>${o.map(t=>li(t,'termín: '+fd(t.due))).join('')||'<p class=dim>Nic nečeká.</p>'}
 <div class=l style="margin-top:18px">Podmínky</div><div class=c>Konec: ${fd(c.e,1)}<br>${c.al?'Povoleno zmeškat '+c.al+' dní':'Zmeškáš jediný den a je konec.'}</div>
-<div class=l style="margin-top:18px">Záloha dat</div><div class=c><div class=row><button class=g data-a=bk>Zkopírovat zálohu</button><button class=g data-a=rs>Obnovit</button></div><small>Zálohu si ulož do Poznámek. Hodí se před přeinstalací ikony.</small></div><div class=l style="margin-top:18px">Motivační fotka</div><div class=c><div class=row><button data-a=pick>${S.p?'Změnit fotku':'Vybrat fotku'}</button>${S.p?'<button class=g data-a=nophoto>Odebrat</button>':''}</div><small>Zobrazí se jako pozadí. Zůstane jen v tvém telefonu.</small></div><button id=sur>Držet 3 s: vzdát se</button><p class=q>Chceš to vzdát? Tak drž prst a dívej se, jak slabost vítězí.</p>`}
+<div class=l style="margin-top:18px">Záloha dat</div><div class=c><div class=row><button class=g data-a=bk>Zkopírovat zálohu</button><button class=g data-a=rs>Obnovit</button></div><small>Zálohu si ulož do Poznámek. Hodí se před přeinstalací ikony.</small></div><div class=l style="margin-top:18px">Motivační fotka</div><div class=c><div class=row><button data-a=pick>${S.p?'Změnit fotku':'Vybrat fotku'}</button>${S.p?'<button class=g data-a=nophoto>Odebrat</button>':''}</div><small>Zobrazí se jako pozadí. Zůstane jen v tvém telefonu.</small></div>${c.w?`<div class=c><div class=l style="margin:0 0 6px">Než to vzdáš, přečti si to</div><div class=why>${e(c.w)}</div></div>`:''}<button id=sur>Držet 3 s: vzdát se</button><p class=q>Chceš to vzdát? Tak drž prst a dívej se, jak slabost vítězí.</p>`}
 function hall(){const h=S.h,w=h.filter(x=>x.r=='v').length;
  return`<h2>Síň slávy</h2><div class=l>Splněno ${w} z ${h.length}</div>`+(h.length?h.map(x=>`<div class="c ${x.r=='v'?'w':'f'}"><b>${x.r=='v'?'✔':'✕'} ${e(x.n)}</b><small>${fd(x.s,1)} – ${fd(x.e,1)} · ${x.d} dní · ${x.r=='v'?'SPLNĚNO':x.r=='x'?'PROHRÁNO':'VZDÁNO'}</small></div>`).join(''):'<p class=q>Zatím prázdno. Hrdinové se nerodí v prázdné síni.</p>')}
 function verdict(){const v=S.v,w=v.r=='v';return`<div class=ov><div class="stamp ${w?'':'bad'}">${w?'Splněno':v.r=='x'?'Prohrál jsi':'Vzdal ses'}</div><h2>${e(v.n)}</h2><p>${w?'Výzva padla. Jsi silnější než včera.':'Slabost vyhrála. Ne však napořád. Začni znovu — dnes.'}</p><button data-a=vok>${w?'Pokračovat':'Znovu do boje'}</button></div>`}
-function render(){const p=$('#ph');p.style.backgroundImage=S.p?`url("${S.p}")`:'none';p.classList.toggle('on',!!S.p);$('#v').innerHTML=S.v?verdict():'';
+function render(){$('#nt').innerHTML=rd&&S.a?note():'';const p=$('#ph');p.style.backgroundImage=S.p?`url("${S.p}")`:'none';p.classList.toggle('on',!!S.p);$('#v').innerHTML=S.v?verdict():'';
  $('#m').innerHTML=tab=='h'?hall():!S.a?newc():tab=='u'?tasksTab():today();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==tab))}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a],[data-t]');if(!b)return;const a=b.dataset.a,i=b.dataset.i;
  if(b.dataset.t){tab=b.dataset.t;scrollTo(0,0);render();return}
- if(a=='chk')chk(i);else if(a=='addo')addo();else if(a=='addr')addr();else if(a=='del')del(i);else if(a=='go')start();else if(a=='bk')bk();else if(a=='rs')rs();else if(a=='pick')$('#pf').click();else if(a=='nophoto'){S.p=null;save();render()}else if(a=='vok'){S.v=null;save();render()}});
+ if(a=='chk')chk(i);else if(a=='addo')addo();else if(a=='addr')addr();else if(a=='del')del(i);else if(a=='go')start();else if(a=='wopen'){rd=S.a.w?1:2;render()}else if(a=='wedit'){rd=2;render()}else if(a=='wclose'){rd=0;render()}else if(a=='wsave'){S.a.w=$('#wt').value.trim();save();rd=S.a.w?1:0;render()}else if(a=='bk')bk();else if(a=='rs')rs();else if(a=='pick')$('#pf').click();else if(a=='nophoto'){S.p=null;save();render()}else if(a=='vok'){S.v=null;save();render()}});
 let ht;document.addEventListener('pointerdown',ev=>{const b=ev.target.closest('#sur');if(!b)return;b.classList.add('hold');ht=setTimeout(()=>{fin(S.a,'s');save();render()},3000)});
 ['pointerup','pointercancel'].forEach(v=>document.addEventListener(v,()=>{clearTimeout(ht);const b=$('#sur');b&&b.classList.remove('hold')}));
 document.addEventListener('change',ev=>{if(ev.target.id!='pf')return;const f=ev.target.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
  im.onload=()=>{const k=Math.min(1,1200/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=im.width*k;cv.height=im.height*k;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(u);
   const old=S.p;S.p=cv.toDataURL('image/jpeg',.8);if(!save()){S.p=old;alert('Fotku se nepodařilo uložit, zkus menší.')}render()};im.src=u;ev.target.value=''});
 document.addEventListener('contextmenu',ev=>ev.preventDefault());
-['visibilitychange','focus'].forEach(v=>addEventListener(v,()=>{if(!document.hidden){settle();render()}}));
+['visibilitychange','focus'].forEach(v=>addEventListener(v,()=>{if(!document.hidden){settle();if(rd!=2)render()}}));
 settle();render();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js');
 </script></body></html>
